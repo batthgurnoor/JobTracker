@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Job Tracker Extension",
+  "description": "Save and track job applications from any page.",
+  "version": "1.0.0",
+  "action": {
+    "default_title": "Job Tracker",
+    "default_popup": "src/popup/index.html"
+  },
+  "permissions": ["storage", "tabs", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/index.ts"],
+      "run_at": "document_idle"
+    }
+  ]
+}
