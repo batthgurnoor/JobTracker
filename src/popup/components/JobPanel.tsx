@@ -15,6 +15,7 @@ import { DEFAULT_JOB_STATUS, JOB_STATUSES, type Job, type JobStatus } from "../.
 import type { ExtractedJobPage } from "../../types/extractedJobPage";
 import { computeDashboardStats } from "../../lib/dashboardStats";
 import { DashboardSummary } from "./dashboard/DashboardSummary";
+import { JobBackupControls } from "./JobBackupControls";
 import { JobEditView } from "./JobEditView";
 import { JobList } from "./JobList";
 
@@ -216,6 +217,15 @@ export function JobPanel({ user }: JobPanelProps) {
 
       {!editingJob ? (
         <DashboardSummary stats={dashboardStats} loading={jobsLoading} />
+      ) : null}
+
+      {!editingJob ? (
+        <JobBackupControls
+          jobs={jobs}
+          userId={user.uid}
+          disabled={jobsLoading}
+          onAfterImport={loadJobs}
+        />
       ) : null}
 
       {tabHint && !editingJob ? <p className="text-xs text-slate-500">{tabHint}</p> : null}
