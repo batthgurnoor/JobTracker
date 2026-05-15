@@ -45,9 +45,6 @@ function compareByStatus(a: Job, b: Job): number {
   return compareByDateSaved(a, b, "desc");
 }
 
-/**
- * Filters and sorts jobs in memory (fast for typical popup list sizes).
- */
 export function filterAndSortJobs(
   jobs: Job[],
   searchQuery: string,

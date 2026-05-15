@@ -1,6 +1,5 @@
 export type FollowUpUrgency = "none" | "today" | "overdue";
 
-/** Normalizes stored values to YYYY-MM-DD for date inputs and comparisons. */
 export function toDateInputValue(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -20,9 +19,6 @@ function startOfLocalDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
-/**
- * Returns whether a follow-up date is due today or already past (date-only, local timezone).
- */
 export function getFollowUpUrgency(followUpDate: string): FollowUpUrgency {
   const normalized = toDateInputValue(followUpDate);
   if (!normalized) {

@@ -14,9 +14,9 @@ import {
 import { DEFAULT_JOB_STATUS, JOB_STATUSES, type Job, type JobStatus } from "../../types/job";
 import type { ExtractedJobPage } from "../../types/extractedJobPage";
 import { computeDashboardStats } from "../../lib/dashboardStats";
+import { BackupSection } from "./BackupSection";
 import { DashboardSummary } from "./dashboard/DashboardSummary";
-import { JobBackupControls } from "./JobBackupControls";
-import { JobEditView } from "./JobEditView";
+import { JobEditor } from "./JobEditor";
 import { JobList } from "./JobList";
 
 type JobPanelProps = {
@@ -124,7 +124,6 @@ export function JobPanel({ user }: JobPanelProps) {
         return;
       }
 
-      // Form values win when the user typed something; otherwise use scraped fields.
       const finalTitle = jobTitle.trim() || extracted.jobTitle || "Untitled job";
       const finalCompany = company.trim() || extracted.company;
       const finalLocation = location.trim() || extracted.location;
@@ -194,7 +193,7 @@ export function JobPanel({ user }: JobPanelProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-3">
+      <div className="flex items-start justify-between gap-2 border-b border-slate-200/90 pb-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-slate-500">Signed in as</p>
           <p className="truncate text-sm font-medium text-slate-800">{user.email}</p>
@@ -203,7 +202,7 @@ export function JobPanel({ user }: JobPanelProps) {
           type="button"
           onClick={() => void handleLogout()}
           disabled={logoutLoading}
-          className="shrink-0 rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {logoutLoading ? "Signing out..." : "Log out"}
         </button>
@@ -220,7 +219,7 @@ export function JobPanel({ user }: JobPanelProps) {
       ) : null}
 
       {!editingJob ? (
-        <JobBackupControls
+        <BackupSection
           jobs={jobs}
           userId={user.uid}
           disabled={jobsLoading}
@@ -236,7 +235,7 @@ export function JobPanel({ user }: JobPanelProps) {
       ) : null}
 
       {editingJob ? (
-        <JobEditView
+        <JobEditor
           job={editingJob}
           userId={user.uid}
           onBack={() => setEditingJob(null)}
@@ -246,7 +245,7 @@ export function JobPanel({ user }: JobPanelProps) {
 
       {!editingJob ? (
       <>
-      <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+      <div className="space-y-2 rounded-xl border border-slate-200/90 bg-slate-50/70 p-2.5 shadow-sm ring-1 ring-slate-900/[0.03]">
         <p className="text-xs font-semibold text-slate-600">Save a new job</p>
         <label className="block text-xs font-medium text-slate-600">
           Job title
@@ -255,7 +254,7 @@ export function JobPanel({ user }: JobPanelProps) {
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
             placeholder="Software Engineer"
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             disabled={formDisabled}
           />
         </label>
@@ -266,7 +265,7 @@ export function JobPanel({ user }: JobPanelProps) {
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             placeholder="Acme Inc."
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             disabled={formDisabled}
           />
         </label>
@@ -277,7 +276,7 @@ export function JobPanel({ user }: JobPanelProps) {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Remote · San Francisco"
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             disabled={formDisabled}
           />
         </label>
@@ -288,7 +287,7 @@ export function JobPanel({ user }: JobPanelProps) {
             value={salary}
             onChange={(e) => setSalary(e.target.value)}
             placeholder="$120k – $150k"
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             disabled={formDisabled}
           />
         </label>
@@ -297,7 +296,7 @@ export function JobPanel({ user }: JobPanelProps) {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as JobStatus)}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             disabled={formDisabled}
           >
             {JOB_STATUSES.map((option) => (
@@ -314,7 +313,7 @@ export function JobPanel({ user }: JobPanelProps) {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Recruiter, salary range, links…"
             rows={2}
-            className="mt-1 w-full resize-none rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full resize-none rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             disabled={formDisabled}
           />
         </label>
@@ -325,14 +324,14 @@ export function JobPanel({ user }: JobPanelProps) {
           type="button"
           onClick={() => void handleSaveJob()}
           disabled={formDisabled}
-          className="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saveLoading ? "Saving job..." : "Save current job"}
         </button>
         <button
           type="button"
           onClick={() => void refreshFromCurrentTab()}
-          className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-60"
           disabled={formDisabled}
         >
           {extractLoading ? "Reading page..." : "Refresh from current tab"}

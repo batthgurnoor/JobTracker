@@ -4,17 +4,17 @@ import { toDateInputValue } from "../../lib/followUpDate";
 import { updateJobForUser } from "../../services/jobService";
 import { JOB_STATUSES, type Job, type JobStatus } from "../../types/job";
 
-type JobEditViewProps = {
+type JobEditorProps = {
   job: Job;
   userId: string;
   onBack: () => void;
   onSaved: (job: Job) => void;
 };
 
-const fieldClass =
-  "mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60";
+const input =
+  "mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60";
 
-export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) {
+export function JobEditor({ job, userId, onBack, onSaved }: JobEditorProps) {
   const [jobTitle, setJobTitle] = useState(job.jobTitle);
   const [company, setCompany] = useState(job.company);
   const [location, setLocation] = useState(job.location);
@@ -66,14 +66,14 @@ export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) 
   }
 
   return (
-    <section className="rounded-md border border-slate-200 bg-slate-50 p-3">
+    <section className="rounded-xl border border-slate-200/90 bg-slate-50/80 p-3 shadow-sm ring-1 ring-slate-900/[0.03]">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-slate-800">Edit job</h2>
+        <h2 className="text-sm font-semibold tracking-tight text-slate-900">Edit job</h2>
         <button
           type="button"
           onClick={onBack}
           disabled={saving}
-          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
         >
           Back
         </button>
@@ -88,7 +88,7 @@ export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) 
             onChange={(e) => setJobTitle(e.target.value)}
             required
             disabled={saving}
-            className={fieldClass}
+            className={input}
           />
         </label>
         <label className="block text-xs font-medium text-slate-600">
@@ -98,7 +98,7 @@ export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) 
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             disabled={saving}
-            className={fieldClass}
+            className={input}
           />
         </label>
         <label className="block text-xs font-medium text-slate-600">
@@ -108,7 +108,7 @@ export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) 
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             disabled={saving}
-            className={fieldClass}
+            className={input}
           />
         </label>
         <label className="block text-xs font-medium text-slate-600">
@@ -119,7 +119,7 @@ export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) 
             onChange={(e) => setSalary(e.target.value)}
             placeholder="$120k – $150k"
             disabled={saving}
-            className={fieldClass}
+            className={input}
           />
         </label>
         <label className="block text-xs font-medium text-slate-600">
@@ -128,7 +128,7 @@ export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) 
             value={status}
             onChange={(e) => setStatus(e.target.value as JobStatus)}
             disabled={saving}
-            className={fieldClass}
+            className={input}
           >
             {JOB_STATUSES.map((option) => (
               <option key={option} value={option}>
@@ -144,7 +144,7 @@ export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) 
             value={followUpDate}
             onChange={(e) => setFollowUpDate(e.target.value)}
             disabled={saving}
-            className={fieldClass}
+            className={input}
           />
         </label>
         <label className="block text-xs font-medium text-slate-600">
@@ -154,12 +154,12 @@ export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) 
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             disabled={saving}
-            className={`${fieldClass} resize-none`}
+            className={`${input} resize-none`}
           />
         </label>
 
         {error ? (
-          <p className="rounded-md bg-red-50 px-2 py-1.5 text-xs text-red-700" role="alert">
+          <p className="rounded-lg bg-red-50 px-2 py-1.5 text-xs text-red-700" role="alert">
             {error}
           </p>
         ) : null}
@@ -167,7 +167,7 @@ export function JobEditView({ job, userId, onBack, onSaved }: JobEditViewProps) 
         <button
           type="submit"
           disabled={saving}
-          className="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? "Saving changes..." : "Save changes"}
         </button>

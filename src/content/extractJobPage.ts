@@ -2,13 +2,8 @@ import type { ExtractedJobPage } from "../types/extractedJobPage";
 
 const MAX_FIELD_LENGTH = 300;
 
-/** Message type the popup sends to request a fresh scrape of the open tab. */
 export const EXTRACT_JOB_MESSAGE = "JOB_TRACKER_EXTRACT_JOB" as const;
 
-/**
- * Reads visible text from the first matching selector.
- * Skips hidden nodes and trims overly long strings.
- */
 function textFromSelectors(selectors: string[]): string {
   for (const selector of selectors) {
     try {
@@ -17,14 +12,11 @@ function textFromSelectors(selectors: string[]): string {
       if (text && text.length <= MAX_FIELD_LENGTH) {
         return text;
       }
-    } catch {
-      // Invalid selector — try the next one.
-    }
+    } catch {}
   }
   return "";
 }
 
-/** Reads Open Graph / standard meta tags (common on job boards and share cards). */
 function metaContent(names: string[]): string {
   for (const name of names) {
     const byProperty = document.querySelector(`meta[property="${name}"]`)?.getAttribute("content");
@@ -39,10 +31,6 @@ function metaContent(names: string[]): string {
   return "";
 }
 
-/**
- * Finds an element whose id or class contains a keyword (e.g. "job-title").
- * Only checks a small set of tags to stay fast and avoid noisy matches.
- */
 function textFromKeyword(keywords: string[]): string {
   const allowedTags = ["h1", "h2", "p", "span", "div", "a"];
 
@@ -66,7 +54,6 @@ function textFromKeyword(keywords: string[]): string {
   return "";
 }
 
-/** Parses "Role at Company" or "Role | Company" patterns from document.title. */
 function parseTitleParts(pageTitle: string): { jobTitle: string; company: string } {
   const cleaned = pageTitle.replace(/\s+/g, " ").trim();
   if (!cleaned) {
@@ -91,7 +78,6 @@ function parseTitleParts(pageTitle: string): { jobTitle: string; company: string
   return { jobTitle: cleaned, company: "" };
 }
 
-/** LinkedIn public job view — selectors may change; we try several stable patterns. */
 function extractLinkedIn(): Partial<ExtractedJobPage> {
   const jobTitle = textFromSelectors([
     "h1.top-card-layout__title",
@@ -119,7 +105,6 @@ function extractLinkedIn(): Partial<ExtractedJobPage> {
   return { jobTitle, company, location };
 }
 
-/** Indeed job detail / view job pages. */
 function extractIndeed(): Partial<ExtractedJobPage> {
   const jobTitle = textFromSelectors([
     "h1.jobsearch-JobInfoHeader-title",
@@ -146,9 +131,6 @@ function extractIndeed(): Partial<ExtractedJobPage> {
   return { jobTitle, company, location };
 }
 
-/**
- * Generic extraction for any site: meta tags, first h1, and keyword-based class/id search.
- */
 function extractGeneric(): Partial<ExtractedJobPage> {
   const jobTitle =
     metaContent(["og:title", "twitter:title"]) ||
@@ -179,10 +161,6 @@ function hostMatches(hostname: string, suffix: string): boolean {
   return hostname === suffix || hostname.endsWith(`.${suffix}`);
 }
 
-/**
- * Main entry: tries site-specific extractors, then generic heuristics,
- * then document.title + URL as a safe fallback (never throws).
- */
 export function extractJobFromPage(): ExtractedJobPage {
   const url = window.location.href;
   const hostname = window.location.hostname.toLowerCase();
@@ -205,7 +183,6 @@ export function extractJobFromPage(): ExtractedJobPage {
   let company = partial.company?.trim() ?? "";
   let location = partial.location?.trim() ?? "";
 
-  // Fill gaps from document.title patterns (works on many boards).
   const fromTitle = parseTitleParts(pageTitle);
   if (!jobTitle) {
     jobTitle = fromTitle.jobTitle;
@@ -214,7 +191,6 @@ export function extractJobFromPage(): ExtractedJobPage {
     company = fromTitle.company;
   }
 
-  // Last resort: always keep something usable for jobTitle + url.
   const usedOnlyFallbackTitle = !partial.jobTitle?.trim();
   if (!jobTitle) {
     jobTitle = pageTitle || "Untitled job";

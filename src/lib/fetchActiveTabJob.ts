@@ -10,10 +10,6 @@ function isRestrictedUrl(url: string): boolean {
   );
 }
 
-/**
- * Asks the content script on the active tab to extract job fields.
- * Falls back to tab title + URL when messaging fails (e.g. page not refreshed after install).
- */
 export async function fetchExtractedJobFromActiveTab(): Promise<ExtractedJobPage | null> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id || !tab.url || isRestrictedUrl(tab.url)) {
@@ -31,9 +27,7 @@ export async function fetchExtractedJobFromActiveTab(): Promise<ExtractedJobPage
         url: tab.url
       };
     }
-  } catch {
-    // Content script may not be loaded yet — use tab metadata only.
-  }
+  } catch {}
 
   return {
     jobTitle: tab.title?.trim() || "Untitled job",

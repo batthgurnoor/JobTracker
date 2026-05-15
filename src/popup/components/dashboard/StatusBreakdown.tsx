@@ -4,7 +4,6 @@ type StatusBreakdownProps = {
   counts: Record<JobStatus, number>;
 };
 
-/** Single-line wrap-friendly status breakdown for narrow popup width. */
 export function StatusBreakdown({ counts }: StatusBreakdownProps) {
   return (
     <div className="flex flex-wrap gap-x-2 gap-y-1 text-[11px] leading-tight text-slate-600">

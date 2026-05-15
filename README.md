@@ -1,65 +1,94 @@
-# Job Tracker Extension
+# Job Tracker — Chrome Extension
 
-A Chrome Extension (Manifest V3) built with React, TypeScript, Vite, Tailwind CSS, Firebase Authentication, and Cloud Firestore.  
-It lets people sign in with email/password and save job applications under their own account.
+**Job Tracker** — Chrome extension (MV3) built with **React 19**, **TypeScript**, **Vite**, **Tailwind CSS**, **Firebase Auth**, and **Cloud Firestore** for saving and organizing job applications with per-user cloud storage. Implements authenticated CRUD for job records, a content script that extracts job metadata from public DOM (LinkedIn/Indeed heuristics plus generic fallbacks), search/filter/sort in the popup, dashboard aggregates, follow-up date tracking with visual cues, and validated JSON import/export with duplicate URL handling.
 
 ## Features
 
-### Authentication (Phase 2)
+- **Authentication** — Email/password sign-up, sign-in, and sign-out; Firebase config via `VITE_*` env vars.
+- **Job CRUD** — List jobs from `users/{uid}/jobs`; edit title, company, location, salary, status, notes, follow-up date; delete entries; block duplicate saves by normalized URL.
+- **Smart capture** — Content script reads only public HTML (meta tags, headings, common patterns); reinforced selectors for LinkedIn and Indeed; falls back to tab title and URL elsewhere.
+- **Organization** — Search across title, company, location, and notes; filter by pipeline status; sort by date, company, or status.
+- **Dashboard** — Totals, follow-ups due today / overdue, and counts per status.
+- **Backup** — Export all jobs as UTF-8 JSON; import with validation; skips duplicates by URL.
 
-- Email/password sign-up, sign-in, and sign-out
-- Firebase config via Vite env vars (see `.env.example`)
+## Tech stack
 
-### Job list & tracking (Phase 3)
+| Area | Choice |
+|------|--------|
+| UI | React 19, Tailwind CSS |
+| Language / tooling | TypeScript, Vite |
+| Extension | Chrome MV3, `@crxjs/vite-plugin` |
+| Backend | Firebase Authentication, Cloud Firestore |
 
-- Loads all jobs from `users/{userId}/jobs` when you are signed in
-- Job cards show title, company, location, URL, date saved, and status
-- Change status in a dropdown (`Saved`, `Applied`, `Interview`, `Offer`, `Rejected`) — updates Firestore
-- Delete jobs from Firestore
-- Blocks duplicate saves when the same job URL already exists for your account
-- Empty state: **No saved jobs yet.**
-- Firestore access lives in `src/services/jobService.ts`
+## Installation
 
-### Smart save from job pages (Phase 4)
+1. **Clone the repo** and install dependencies:
 
-- Content script reads public DOM only (no APIs, no login bypass)
-- Extracts job title, company, and location using meta tags, headings, and common class names
-- Extra selectors for LinkedIn and Indeed; falls back to `document.title` + tab URL on any site
-- Popup **Refresh from current tab** pre-fills the save form; your edits are kept on save
+   ```bash
+   npm install
+   ```
 
-### Search, filter, and sort (Phase 5)
+2. **Firebase** — In [Firebase Console](https://console.firebase.google.com/), create or select a project:
+   - **Authentication → Sign-in method**: enable **Email/Password**.
+   - **Firestore**: create a database (adjust security rules as below).
 
-- Search saved jobs by title, company, location, or notes
-- Filter by status; sort by date, company name, or status
-- Shows how many jobs match (`Showing X of Y jobs`)
+3. **Environment variables** — Copy `.env.example` to `.env` and paste your web app keys from **Project settings → General → Your apps**.
 
-### Job details editing (Phase 6)
+   ```bash
+   cp .env.example .env
+   ```
 
-- Edit saved jobs (title, company, location, salary, status, notes, follow-up date)
-- Changes saved to Firestore under your account
-- Follow-up badges for **today** (amber) and **overdue** (red)
-- **Back** returns to the job list
+   On Windows PowerShell: `Copy-Item .env.example .env`
 
-### Dashboard summary (Phase 7)
+   Required variables: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`.
 
-- Compact summary at the top: total jobs, follow-ups due today and overdue
-- Per-status counts (Saved through Rejected); no charts
+4. **Build**:
 
-### Export / import (Phase 8)
+   ```bash
+   npm run build
+   ```
 
-- **Export jobs** downloads all saved jobs as JSON (UTF-8)
-- **Import jobs** uploads a JSON file; entries are validated before anything is written to Firestore
-- Duplicate URLs (normalized) are skipped — existing jobs and repeats inside the same file
-- Success and error messages appear under the backup buttons
+   Output is written to **`dist/`**. Restart the build after changing `.env` so Vite picks up new values.
 
-### Backup and restore
+### Authorized extension origin (recommended)
 
-1. Sign in and open the extension popup.
-2. Click **Export jobs**. Chrome saves `job-tracker-jobs-YYYY-MM-DD.json` (usually to your **Downloads** folder).
-3. Keep that file somewhere safe if you want an offline backup or to move data between accounts/machines.
-4. To restore or merge: click **Import jobs**, choose a backup JSON file (or any file that matches the format: either `{ "jobs": [ ... ] }` or a bare array of job objects).
-5. Each imported row must include a **valid `url`** string. Other fields match your saved jobs (`jobTitle`, `company`, `location`, `salary`, `status`, `notes`, `followUpDate`, `dateSaved`).
-6. After import, the list refreshes; duplicates by URL are skipped automatically.
+After the first build, load the unpacked extension once and copy its ID from `chrome://extensions`. In Firebase **Authentication → Settings → Authorized domains**, add:
+
+`chrome-extension://YOUR_EXTENSION_ID`
+
+Use the full URI including `chrome-extension://`.
+
+### Firestore rules
+
+Restrict access so each user only touches their own documents:
+
+```
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/jobs/{jobId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+Publish under **Firestore → Rules**.
+
+## Load the extension in Chrome
+
+1. Run `npm run build` (or `npm run dev` while developing).
+2. Open **`chrome://extensions`**.
+3. Turn on **Developer mode** (top right).
+4. Click **Load unpacked**.
+5. Select the **`dist`** folder inside this project.
+
+During development you can run `npm run dev` and reload the unpacked extension when files change.
+
+## JSON backup format
+
+Exports download as `job-tracker-jobs-YYYY-MM-DD.json`. Imports accept either `{ "jobs": [ … ] }` or a bare array. Each job needs a valid **`url`** string; other fields align with stored jobs (`jobTitle`, `company`, `location`, `salary`, `status`, `notes`, `followUpDate`, `dateSaved`). Duplicate URLs are skipped.
 
 ## Project structure
 
@@ -97,107 +126,30 @@ job-tracker-extension/
       App.tsx
       index.css
       components/
-        AuthPanel.tsx
+        SignInForm.tsx
         JobPanel.tsx
         JobList.tsx
         JobListControls.tsx
         JobCard.tsx
-        JobBackupControls.tsx
-        JobEditView.tsx
+        FollowUpBadge.tsx
+        BackupSection.tsx
+        JobEditor.tsx
         dashboard/
           DashboardSummary.tsx
           SummaryChip.tsx
           StatusBreakdown.tsx
 ```
 
-## Setup
-
-### 1. Firebase project
-
-1. In the [Firebase Console](https://console.firebase.google.com/), create (or choose) a project.
-2. **Authentication → Sign-in method**: enable **Email/Password**.
-3. **Firestore Database**: create the database (production or test mode to start — see rules below).
-
-### 2. Registered extension ID (recommended)
-
-Firebase keeps a tight list of origins that may use Authentication in the browser extension context.
-
-1. Build and load the extension once (**Load unpacked** → select the built `dist` folder).
-2. On `chrome://extensions`, enable **Developer mode** and copy the **Extension ID**.
-3. In Firebase: **Authentication → Settings → Authorized domains → Add domain** and enter the full URI (this is what Firebase validates as the “domain” for an extension):
-
-   `chrome-extension://YOUR_EXTENSION_ID`
-
-   Example if your ID is `abcdefghijklmnopqrstuvwxyz`:  
-   `chrome-extension://abcdefghijklmnopqrstuvwxyz`
-
-   Paste the **whole** string including `chrome-extension://`. Typing only the 32-character ID often shows “a valid domain name is required.”
-
-### 3. Environment variables
-
-1. Copy `.env.example` to `.env` in the repo root.
-
-```bash
-cp .env.example .env   # macOS / Linux / Git Bash on Windows
-
-# Windows PowerShell
-Copy-Item .env.example .env
-```
-
-2. In Firebase: **Project settings → General → Your apps → Web app** (create one if needed). Paste the values into `.env`:
-
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
-
-3. Restart the dev server / rebuild whenever `.env` changes so Vite can embed `VITE_*` values:
-
-```bash
-npm install
-npm run build
-```
-
-### 4. Firestore security rules
-
-Use rules so each user reads/writes only their own `/users/{uid}/jobs` subtree:
-
-```
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId}/jobs/{jobId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-Publish these in **Firestore → Rules**. Without them (or equivalent), saves may fail with “permission denied”.
-
-### 5. Install, build, load in Chrome
-
-```bash
-npm install
-npm run build
-```
-
-- Open `chrome://extensions`
-- Turn on **Developer mode**
-- Click **Load unpacked**
-- Choose the **`dist`** folder from this repo
-
-During development:
-
-```bash
-npm run dev
-```
-
 ## Notes
 
-- Config is accessed only through `import.meta.env` (see `src/lib/firebase.ts`). Do **not** commit `.env`; it stays on your machine.
-- The popup pulls the active tab title/URL for `jobTitle` and `url` when you click **Save current job**; company, location, notes, and status are edited in the form.
-- If Firestore ever asks for a composite index, the browser error console will include a direct link to create it in the Firebase console.
+- Never commit `.env`; configuration is read via `import.meta.env` in `src/lib/firebase.ts`.
+- If Firestore requests a composite index, the browser console usually links straight to the Firebase console to create it.
+
+## Future improvements
+
+- Social / SSO sign-in (Google, GitHub) in addition to email/password.
+- Browser notifications or calendar hooks for follow-up reminders.
+- Tags, custom pipelines, or saved views beyond a single status field.
+- Optional dark theme and tighter accessibility pass (focus rings, contrast).
+- Stronger site-specific parsers and optional manual field mapping for edge-case layouts.
+- Unit tests for extraction heuristics and backup validation.

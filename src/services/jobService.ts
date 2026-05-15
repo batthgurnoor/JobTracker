@@ -22,7 +22,6 @@ import {
 } from "../types/job";
 import { toDateInputValue } from "../lib/followUpDate";
 
-/** Thrown when the user already saved this job URL. */
 export class DuplicateJobUrlError extends Error {
   constructor() {
     super("This job URL is already in your list.");
@@ -51,7 +50,6 @@ function normalizeStatus(value: unknown): JobStatus {
   return DEFAULT_JOB_STATUS;
 }
 
-/** Normalizes URLs so duplicates are caught even with small differences. */
 export function normalizeJobUrl(url: string): string {
   try {
     const parsed = new URL(url.trim());
@@ -83,10 +81,6 @@ function documentToJob(docId: string, data: DocumentData): Job {
   };
 }
 
-/**
- * Loads all jobs for the signed-in user (newest saved first).
- * Path: users/{userId}/jobs
- */
 export async function fetchJobsForUser(userId: string): Promise<Job[]> {
   const jobsRef = jobsCollection(userId);
   const jobsQuery = query(jobsRef, orderBy("dateSaved", "desc"));
@@ -94,9 +88,6 @@ export async function fetchJobsForUser(userId: string): Promise<Job[]> {
   return snapshot.docs.map((jobDoc) => documentToJob(jobDoc.id, jobDoc.data()));
 }
 
-/**
- * Returns true if this user already has a job with the same URL (normalized comparison).
- */
 export async function hasJobWithUrl(userId: string, url: string): Promise<boolean> {
   const normalized = normalizeJobUrl(url);
   const snapshot = await getDocs(jobsCollection(userId));
@@ -105,9 +96,6 @@ export async function hasJobWithUrl(userId: string, url: string): Promise<boolea
   );
 }
 
-/**
- * Creates a job document. Throws DuplicateJobUrlError if the URL already exists.
- */
 export async function createJobForUser(userId: string, input: JobCreateInput): Promise<void> {
   const url = input.url.trim();
   if (await hasJobWithUrl(userId, url)) {
@@ -124,9 +112,6 @@ export async function createJobForUser(userId: string, input: JobCreateInput): P
   });
 }
 
-/**
- * Updates editable job fields from the detail / edit screen.
- */
 export async function updateJobForUser(
   userId: string,
   jobId: string,
@@ -145,9 +130,6 @@ export async function updateJobForUser(
   });
 }
 
-/**
- * Updates only the status field (and updatedAt) on an existing job.
- */
 export async function updateJobStatusForUser(
   userId: string,
   jobId: string,
@@ -160,17 +142,11 @@ export async function updateJobStatusForUser(
   });
 }
 
-/**
- * Permanently removes a job from Firestore.
- */
 export async function deleteJobForUser(userId: string, jobId: string): Promise<void> {
   const jobRef = doc(getFirestoreInstance(), "users", userId, "jobs", jobId);
   await deleteDoc(jobRef);
 }
 
-/**
- * Imports validated jobs; skips URLs that already exist for this user or appear twice in the file.
- */
 export async function importValidatedJobsForUser(
   userId: string,
   payloads: JobCreateInput[],

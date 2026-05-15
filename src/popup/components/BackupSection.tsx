@@ -3,20 +3,14 @@ import { downloadJobsBackup, validateBackupPayload } from "../../lib/jobBackup";
 import { importValidatedJobsForUser } from "../../services/jobService";
 import type { Job } from "../../types/job";
 
-type JobBackupControlsProps = {
+type BackupSectionProps = {
   jobs: Job[];
   userId: string;
   disabled?: boolean;
-  /** Reload list after a successful import */
   onAfterImport: () => void | Promise<void>;
 };
 
-export function JobBackupControls({
-  jobs,
-  userId,
-  disabled = false,
-  onAfterImport
-}: JobBackupControlsProps) {
+export function BackupSection({ jobs, userId, disabled = false, onAfterImport }: BackupSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -29,7 +23,10 @@ export function JobBackupControls({
     }
     try {
       downloadJobsBackup(jobs);
-      setBanner({ kind: "ok", text: `Exported ${jobs.length} job${jobs.length === 1 ? "" : "s"} to your Downloads.` });
+      setBanner({
+        kind: "ok",
+        text: `Exported ${jobs.length} job${jobs.length === 1 ? "" : "s"} to your Downloads.`
+      });
     } catch {
       setBanner({ kind: "err", text: "Export failed. Try again." });
     }
@@ -91,7 +88,7 @@ export function JobBackupControls({
   const isDisabled = disabled || busy;
 
   return (
-    <section className="rounded-md border border-slate-200 bg-white px-2 py-2">
+    <section className="rounded-xl border border-slate-200/90 bg-white px-2.5 py-2 shadow-sm ring-1 ring-slate-900/[0.03]">
       <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         Backup
       </p>
@@ -100,7 +97,7 @@ export function JobBackupControls({
           type="button"
           onClick={handleExport}
           disabled={isDisabled}
-          className="flex-1 rounded-md border border-slate-300 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-800 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-800 shadow-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Export jobs
         </button>
@@ -108,7 +105,7 @@ export function JobBackupControls({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isDisabled}
-          className="flex-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs font-medium text-blue-900 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs font-medium text-blue-900 shadow-sm hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? "Importing…" : "Import jobs"}
         </button>
@@ -123,7 +120,7 @@ export function JobBackupControls({
       />
       {banner ? (
         <p
-          className={`mt-2 rounded-md px-2 py-1 text-[11px] leading-snug ${
+          className={`mt-2 rounded-lg px-2 py-1 text-[11px] leading-snug ${
             banner.kind === "ok"
               ? "bg-emerald-50 text-emerald-900"
               : "bg-red-50 text-red-800"

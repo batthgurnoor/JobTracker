@@ -7,13 +7,10 @@ type DashboardSummaryProps = {
   loading?: boolean;
 };
 
-/**
- * Compact overview: totals, follow-ups needing attention, and per-status counts.
- */
 export function DashboardSummary({ stats, loading }: DashboardSummaryProps) {
   return (
     <section
-      className="rounded-lg border border-slate-200 bg-gradient-to-b from-slate-50 to-white px-2 py-2 shadow-sm"
+      className="rounded-xl border border-slate-200/90 bg-gradient-to-b from-slate-50/95 to-white px-2.5 py-2 shadow-sm ring-1 ring-slate-900/[0.03]"
       aria-label="Job tracker summary"
     >
       <div className="mb-1.5 flex items-center justify-between gap-2">

@@ -8,7 +8,6 @@ export type DashboardStats = {
   followUpOverdue: number;
 };
 
-/** Builds dashboard counts from the current job list (runs client-side only). */
 export function computeDashboardStats(jobs: Job[]): DashboardStats {
   const statusCounts = Object.fromEntries(
     JOB_STATUSES.map((status) => [status, 0])

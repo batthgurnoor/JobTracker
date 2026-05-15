@@ -5,7 +5,7 @@ import { formatAuthError } from "../../lib/userFacingErrors";
 
 type AuthMode = "signin" | "signup";
 
-export function AuthPanel() {
+export function SignInForm() {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,11 +45,11 @@ export function AuthPanel() {
 
   return (
     <div className="space-y-3">
-      <div className="flex rounded-md border border-slate-200 p-0.5 text-sm">
+      <div className="flex rounded-lg border border-slate-200 bg-slate-50/80 p-0.5 text-sm shadow-inner">
         <button
           type="button"
-          className={`flex-1 rounded px-2 py-1.5 font-medium transition ${
-            mode === "signin" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"
+          className={`flex-1 rounded-md px-2 py-1.5 font-medium transition ${
+            mode === "signin" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
           }`}
           onClick={() => {
             setMode("signin");
@@ -61,8 +61,8 @@ export function AuthPanel() {
         </button>
         <button
           type="button"
-          className={`flex-1 rounded px-2 py-1.5 font-medium transition ${
-            mode === "signup" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"
+          className={`flex-1 rounded-md px-2 py-1.5 font-medium transition ${
+            mode === "signup" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
           }`}
           onClick={() => {
             setMode("signup");
@@ -82,7 +82,7 @@ export function AuthPanel() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             required
             disabled={isBusy}
           />
@@ -94,7 +94,7 @@ export function AuthPanel() {
             autoComplete={mode === "signin" ? "current-password" : "new-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             required
             minLength={6}
             disabled={isBusy}
@@ -102,7 +102,7 @@ export function AuthPanel() {
         </label>
 
         {error ? (
-          <p className="rounded-md bg-red-50 px-2 py-1.5 text-sm text-red-700" role="alert">
+          <p className="rounded-lg bg-red-50 px-2 py-1.5 text-sm text-red-700" role="alert">
             {error}
           </p>
         ) : null}
@@ -110,7 +110,7 @@ export function AuthPanel() {
         <button
           type="submit"
           disabled={isBusy}
-          className="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {mode === "signin"
             ? loginLoading

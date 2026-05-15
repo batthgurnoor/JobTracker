@@ -2,10 +2,6 @@ import { getApps, initializeApp, type FirebaseApp, type FirebaseOptions } from "
 import { browserLocalPersistence, getAuth, setPersistence, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
-/**
- * Reads Firebase web config from Vite environment variables (VITE_*).
- * Never put real keys in source files—use a local `.env` file (see `.env.example`).
- */
 export function getFirebaseOptions(): FirebaseOptions | null {
   const {
     VITE_FIREBASE_API_KEY,
@@ -65,14 +61,12 @@ function getOrCreateApp(): FirebaseApp {
   return getApps()[0]!;
 }
 
-/** Shared Auth instance for the extension popup (persists across popup opens). */
 export function getAuthInstance(): Auth {
   const auth = getAuth(getOrCreateApp());
   void ensureAuthPersistence(auth);
   return auth;
 }
 
-/** Firestore instance scoped to the same Firebase app as Auth. */
 export function getFirestoreInstance(): Firestore {
   return getFirestore(getOrCreateApp());
 }

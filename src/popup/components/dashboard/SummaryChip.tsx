@@ -1,4 +1,3 @@
-/** Compact metric pill for dashboard summary rows. */
 type SummaryChipProps = {
   label: string;
   value: number | string;
@@ -15,7 +14,7 @@ const variantClass: Record<NonNullable<SummaryChipProps["variant"]>, string> = {
 export function SummaryChip({ label, value, variant = "default" }: SummaryChipProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium ${variantClass[variant]}`}
+      className={`inline-flex items-center gap-1 rounded-lg border px-1.5 py-0.5 text-[11px] font-medium ${variantClass[variant]}`}
       title={`${label}: ${value}`}
     >
       <span className="text-slate-500">{label}</span>

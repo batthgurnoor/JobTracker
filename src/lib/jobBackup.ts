@@ -9,7 +9,6 @@ import { toDateInputValue } from "./followUpDate";
 
 export const JOB_BACKUP_SCHEMA_VERSION = 1 as const;
 
-/** Shape written to JSON export files. */
 export type JobBackupRecord = Omit<Job, "id" | "updatedAt">;
 
 export type JobBackupFile = {
@@ -80,10 +79,6 @@ export type ValidateBackupResult =
   | { ok: true; jobs: JobCreateInput[]; rejectedRowNumbers: number[] }
   | { ok: false; error: string };
 
-/**
- * Validates backup JSON: accepts our wrapper object or a bare array of job-like objects.
- * Rows that fail validation are listed in rejectedRowNumbers; valid rows are returned for import.
- */
 export function validateBackupPayload(parsed: unknown): ValidateBackupResult {
   if (parsed === null || parsed === undefined) {
     return { ok: false, error: "File is empty or not valid JSON." };
@@ -125,7 +120,6 @@ export function validateBackupPayload(parsed: unknown): ValidateBackupResult {
   return { ok: true, jobs, rejectedRowNumbers };
 }
 
-/** Builds the JSON document for download from current Firestore-backed jobs. */
 export function buildBackupFile(jobs: Job[]): JobBackupFile {
   const records: JobBackupRecord[] = jobs.map(({ id: _id, updatedAt: _u, ...rest }) => rest);
 
@@ -137,7 +131,6 @@ export function buildBackupFile(jobs: Job[]): JobBackupFile {
   };
 }
 
-/** Triggers a JSON download in the extension popup (no extra permissions). */
 export function downloadJobsBackup(jobs: Job[]): void {
   const doc = buildBackupFile(jobs);
   const json = JSON.stringify(doc, null, 2);

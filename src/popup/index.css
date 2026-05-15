@@ -2,7 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
   margin: 0;
-  font-family: Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: Inter, system-ui, "Segoe UI", sans-serif;
+  background-color: rgb(248 250 252);
+  color: rgb(15 23 42);
 }

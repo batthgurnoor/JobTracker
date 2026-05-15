@@ -1,6 +1,3 @@
-/**
- * Maps Firebase Auth error codes to short, user-friendly messages.
- */
 export function formatAuthError(error: unknown): string {
   const code = getErrorCode(error);
   switch (code) {
@@ -27,9 +24,6 @@ export function formatAuthError(error: unknown): string {
   }
 }
 
-/**
- * Maps common Firestore failures to friendly copy.
- */
 export function formatFirestoreError(error: unknown): string {
   const code = getErrorCode(error);
   if (code === "permission-denied") {
@@ -48,4 +42,3 @@ function getErrorCode(error: unknown): string | undefined {
   }
   return undefined;
 }
-
