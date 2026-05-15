@@ -17,6 +17,12 @@ It lets people sign in with email/password and save job applications under their
 - Extra selectors for LinkedIn and Indeed; falls back to `document.title` + tab URL on any site
 - Popup **Refresh from current tab** pre-fills the save form; your edits are kept on save
 
+### Search, filter, and sort (Phase 5)
+
+- Search saved jobs by title, company, location, or notes
+- Filter by status; sort by date, company name, or status
+- Shows how many jobs match (`Showing X of Y jobs`)
+
 ### Job list & tracking (Phase 3)
 
 - Loads all jobs from `users/{userId}/jobs` when you are signed in
@@ -42,6 +48,7 @@ job-tracker-extension/
     lib/
       firebase.ts
       fetchActiveTabJob.ts
+      filterJobs.ts
       userFacingErrors.ts
     services/
       jobService.ts
@@ -62,6 +69,7 @@ job-tracker-extension/
         AuthPanel.tsx
         JobPanel.tsx
         JobList.tsx
+        JobListControls.tsx
         JobCard.tsx
 ```
 
