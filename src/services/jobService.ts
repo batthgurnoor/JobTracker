@@ -167,3 +167,29 @@ export async function deleteJobForUser(userId: string, jobId: string): Promise<v
   const jobRef = doc(getFirestoreInstance(), "users", userId, "jobs", jobId);
   await deleteDoc(jobRef);
 }
+
+/**
+ * Imports validated jobs; skips URLs that already exist for this user or appear twice in the file.
+ */
+export async function importValidatedJobsForUser(
+  userId: string,
+  payloads: JobCreateInput[],
+  existingJobs: Job[]
+): Promise<{ imported: number; skippedDuplicate: number }> {
+  const seen = new Set(existingJobs.map((j) => normalizeJobUrl(j.url)));
+  let imported = 0;
+  let skippedDuplicate = 0;
+
+  for (const payload of payloads) {
+    const key = normalizeJobUrl(payload.url);
+    if (seen.has(key)) {
+      skippedDuplicate++;
+      continue;
+    }
+    seen.add(key);
+    await createJobForUser(userId, payload);
+    imported++;
+  }
+
+  return { imported, skippedDuplicate };
+}
