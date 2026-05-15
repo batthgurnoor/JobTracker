@@ -1,23 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { signOut } from "firebase/auth";
-import { getAuthInstance, getFirestoreInstance } from "../../lib/firebase";
-import { loadJobsForUser, saveJobForUser } from "../../lib/jobsFirestore";
+import { getAuthInstance } from "../../lib/firebase";
 import { formatAuthError, formatFirestoreError } from "../../lib/userFacingErrors";
 import {
-  DEFAULT_JOB_STATUS,
-  JOB_STATUSES,
-  type JobRecord,
-  type JobStatus
-} from "../../types/job";
-
-function formatShortDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return iso || "—";
-  }
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
+  createJobForUser,
+  deleteJobForUser,
+  DuplicateJobUrlError,
+  fetchJobsForUser,
+  updateJobStatusForUser
+} from "../../services/jobService";
+import { DEFAULT_JOB_STATUS, JOB_STATUSES, type Job, type JobStatus } from "../../types/job";
+import { JobList } from "./JobList";
 
 async function readActiveTab(): Promise<{ title: string; url: string } | null> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -42,17 +36,29 @@ export function JobPanel({ user }: JobPanelProps) {
   const [status, setStatus] = useState<JobStatus>(DEFAULT_JOB_STATUS);
   const [tabHint, setTabHint] = useState<string | null>(null);
 
-  const [jobs, setJobs] = useState<JobRecord[]>([]);
-  const [showJobs, setShowJobs] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [jobsError, setJobsError] = useState<string | null>(null);
 
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [jobsLoading, setJobsLoading] = useState(false);
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [jobsError, setJobsError] = useState<string | null>(null);
+
+  const loadJobs = useCallback(async () => {
+    setJobsError(null);
+    setJobsLoading(true);
+    try {
+      const list = await fetchJobsForUser(user.uid);
+      setJobs(list);
+    } catch (err) {
+      setJobsError(formatFirestoreError(err));
+    } finally {
+      setJobsLoading(false);
+    }
+  }, [user.uid]);
 
   const refreshTabHint = useCallback(async () => {
     const snap = await readActiveTab();
@@ -60,27 +66,15 @@ export function JobPanel({ user }: JobPanelProps) {
       setTabHint("Open a normal web page tab to capture the job link automatically.");
       return;
     }
-    setTabHint(`From tab: ${snap.title ? snap.title.slice(0, 60) + (snap.title.length > 60 ? "…" : "") : snap.url}`);
+    setTabHint(
+      `From tab: ${snap.title ? snap.title.slice(0, 60) + (snap.title.length > 60 ? "…" : "") : snap.url}`
+    );
   }, []);
 
   useEffect(() => {
     void refreshTabHint();
-  }, [refreshTabHint]);
-
-  const loadMyJobs = useCallback(async () => {
-    setJobsError(null);
-    setJobsLoading(true);
-    try {
-      const db = getFirestoreInstance();
-      const list = await loadJobsForUser(db, user.uid);
-      setJobs(list);
-      setShowJobs(true);
-    } catch (err) {
-      setJobsError(formatFirestoreError(err));
-    } finally {
-      setJobsLoading(false);
-    }
-  }, [user.uid]);
+    void loadJobs();
+  }, [refreshTabHint, loadJobs]);
 
   async function handleLogout() {
     setLogoutError(null);
@@ -105,28 +99,43 @@ export function JobPanel({ user }: JobPanelProps) {
         return;
       }
 
-      const jobTitle = snap.title.trim() || "Untitled job";
-      const payload = {
-        jobTitle,
+      await createJobForUser(user.uid, {
+        jobTitle: snap.title.trim() || "Untitled job",
         company: company.trim(),
         location: location.trim(),
         url: snap.url,
         status,
         notes: notes.trim(),
         dateSaved: new Date().toISOString()
-      };
+      });
 
-      const db = getFirestoreInstance();
-      await saveJobForUser(db, user.uid, payload);
       setSuccessMessage("Job saved to your account.");
-      if (showJobs) {
-        await loadMyJobs();
-      }
+      setCompany("");
+      setLocation("");
+      setNotes("");
+      setStatus(DEFAULT_JOB_STATUS);
+      await loadJobs();
     } catch (err) {
-      setSaveError(formatFirestoreError(err));
+      if (err instanceof DuplicateJobUrlError) {
+        setSaveError(err.message);
+      } else {
+        setSaveError(formatFirestoreError(err));
+      }
     } finally {
       setSaveLoading(false);
     }
+  }
+
+  async function handleStatusChange(jobId: string, nextStatus: JobStatus) {
+    await updateJobStatusForUser(user.uid, jobId, nextStatus);
+    setJobs((current) =>
+      current.map((job) => (job.id === jobId ? { ...job, status: nextStatus } : job))
+    );
+  }
+
+  async function handleDelete(jobId: string) {
+    await deleteJobForUser(user.uid, jobId);
+    setJobs((current) => current.filter((job) => job.id !== jobId));
   }
 
   return (
@@ -155,7 +164,7 @@ export function JobPanel({ user }: JobPanelProps) {
       {tabHint ? <p className="text-xs text-slate-500">{tabHint}</p> : null}
 
       <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2">
-        <p className="text-xs font-semibold text-slate-600">Job details (optional fields)</p>
+        <p className="text-xs font-semibold text-slate-600">Save a new job</p>
         <label className="block text-xs font-medium text-slate-600">
           Company
           <input
@@ -179,7 +188,7 @@ export function JobPanel({ user }: JobPanelProps) {
           />
         </label>
         <label className="block text-xs font-medium text-slate-600">
-          Status
+          Status (for new saves)
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as JobStatus)}
@@ -215,23 +224,13 @@ export function JobPanel({ user }: JobPanelProps) {
         >
           {saveLoading ? "Saving job..." : "Save current job"}
         </button>
-
         <button
           type="button"
           onClick={() => void refreshTabHint()}
-          className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+          className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
           disabled={saveLoading}
         >
           Refresh from current tab
-        </button>
-
-        <button
-          type="button"
-          onClick={() => void loadMyJobs()}
-          disabled={jobsLoading}
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {jobsLoading ? "Loading jobs..." : "View my saved jobs"}
         </button>
       </div>
 
@@ -245,52 +244,13 @@ export function JobPanel({ user }: JobPanelProps) {
         </p>
       ) : null}
 
-      {jobsError ? (
-        <p className="rounded-md bg-red-50 px-2 py-1.5 text-sm text-red-700" role="alert">
-          {jobsError}
-        </p>
-      ) : null}
-
-      {showJobs ? (
-        <section className="border-t border-slate-200 pt-3">
-          <h2 className="mb-2 text-sm font-semibold text-slate-600">Your jobs ({jobs.length})</h2>
-          {jobs.length === 0 ? (
-            <p className="text-sm text-slate-500">No jobs saved yet.</p>
-          ) : (
-            <ul className="max-h-52 space-y-2 overflow-y-auto pr-1">
-              {jobs.map((job) => (
-                <li key={job.id} className="rounded-md border border-slate-100 bg-white p-2 shadow-sm">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="line-clamp-2 text-sm font-semibold text-slate-900">{job.jobTitle}</p>
-                    <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium uppercase text-blue-700">
-                      {job.status}
-                    </span>
-                  </div>
-                  {(job.company || job.location) && (
-                    <p className="mt-1 text-xs text-slate-600">
-                      {[job.company, job.location].filter(Boolean).join(" · ")}
-                    </p>
-                  )}
-                  <p className="mt-1 text-[11px] text-slate-500">Saved {formatShortDate(job.dateSaved)}</p>
-                  <a
-                    href={job.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-1 block truncate text-xs text-blue-700 hover:underline"
-                  >
-                    {job.url}
-                  </a>
-                  {job.notes ? (
-                    <p className="mt-1 line-clamp-2 border-t border-slate-100 pt-1 text-xs text-slate-600">
-                      {job.notes}
-                    </p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : null}
+      <JobList
+        jobs={jobs}
+        loading={jobsLoading}
+        error={jobsError}
+        onStatusChange={handleStatusChange}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }
