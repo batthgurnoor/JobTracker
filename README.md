@@ -40,7 +40,10 @@ It lets people sign in with email/password and save job applications under their
 - Follow-up badges for **today** (amber) and **overdue** (red)
 - **Back** returns to the job list
 
+### Dashboard summary (Phase 7)
 
+- Compact summary at the top: total jobs, follow-ups due today and overdue
+- Per-status counts (Saved through Rejected); no charts
 
 ## Project structure
 
@@ -56,6 +59,7 @@ job-tracker-extension/
   src/
     lib/
       firebase.ts
+      dashboardStats.ts
       fetchActiveTabJob.ts
       filterJobs.ts
       followUpDate.ts
@@ -82,7 +86,10 @@ job-tracker-extension/
         JobListControls.tsx
         JobCard.tsx
         JobEditView.tsx
-        FollowUpBadge.tsx
+        dashboard/
+          DashboardSummary.tsx
+          SummaryChip.tsx
+          StatusBreakdown.tsx
 ```
 
 ## Setup
