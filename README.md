@@ -45,6 +45,22 @@ It lets people sign in with email/password and save job applications under their
 - Compact summary at the top: total jobs, follow-ups due today and overdue
 - Per-status counts (Saved through Rejected); no charts
 
+### Export / import (Phase 8)
+
+- **Export jobs** downloads all saved jobs as JSON (UTF-8)
+- **Import jobs** uploads a JSON file; entries are validated before anything is written to Firestore
+- Duplicate URLs (normalized) are skipped — existing jobs and repeats inside the same file
+- Success and error messages appear under the backup buttons
+
+### Backup and restore
+
+1. Sign in and open the extension popup.
+2. Click **Export jobs**. Chrome saves `job-tracker-jobs-YYYY-MM-DD.json` (usually to your **Downloads** folder).
+3. Keep that file somewhere safe if you want an offline backup or to move data between accounts/machines.
+4. To restore or merge: click **Import jobs**, choose a backup JSON file (or any file that matches the format: either `{ "jobs": [ ... ] }` or a bare array of job objects).
+5. Each imported row must include a **valid `url`** string. Other fields match your saved jobs (`jobTitle`, `company`, `location`, `salary`, `status`, `notes`, `followUpDate`, `dateSaved`).
+6. After import, the list refreshes; duplicates by URL are skipped automatically.
+
 ## Project structure
 
 ```text
@@ -59,6 +75,7 @@ job-tracker-extension/
   src/
     lib/
       firebase.ts
+      jobBackup.ts
       dashboardStats.ts
       fetchActiveTabJob.ts
       filterJobs.ts
@@ -85,6 +102,7 @@ job-tracker-extension/
         JobList.tsx
         JobListControls.tsx
         JobCard.tsx
+        JobBackupControls.tsx
         JobEditView.tsx
         dashboard/
           DashboardSummary.tsx
