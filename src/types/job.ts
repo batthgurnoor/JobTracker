@@ -17,8 +17,11 @@ export interface Job {
   company: string;
   location: string;
   url: string;
+  salary: string;
   status: JobStatus;
   notes: string;
+  /** ISO or YYYY-MM-DD */
+  followUpDate: string;
   dateSaved: string;
   updatedAt: string;
 }
@@ -29,7 +32,20 @@ export interface JobCreateInput {
   company: string;
   location: string;
   url: string;
+  salary?: string;
   status: JobStatus;
   notes: string;
+  followUpDate?: string;
   dateSaved: string;
+}
+
+/** Fields updated from the job edit screen. */
+export interface JobUpdateInput {
+  jobTitle: string;
+  company: string;
+  location: string;
+  salary: string;
+  status: JobStatus;
+  notes: string;
+  followUpDate: string;
 }
