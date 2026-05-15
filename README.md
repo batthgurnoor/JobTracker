@@ -10,6 +10,16 @@ It lets people sign in with email/password and save job applications under their
 - Email/password sign-up, sign-in, and sign-out
 - Firebase config via Vite env vars (see `.env.example`)
 
+### Job list & tracking (Phase 3)
+
+- Loads all jobs from `users/{userId}/jobs` when you are signed in
+- Job cards show title, company, location, URL, date saved, and status
+- Change status in a dropdown (`Saved`, `Applied`, `Interview`, `Offer`, `Rejected`) — updates Firestore
+- Delete jobs from Firestore
+- Blocks duplicate saves when the same job URL already exists for your account
+- Empty state: **No saved jobs yet.**
+- Firestore access lives in `src/services/jobService.ts`
+
 ### Smart save from job pages (Phase 4)
 
 - Content script reads public DOM only (no APIs, no login bypass)
@@ -23,15 +33,14 @@ It lets people sign in with email/password and save job applications under their
 - Filter by status; sort by date, company name, or status
 - Shows how many jobs match (`Showing X of Y jobs`)
 
-### Job list & tracking (Phase 3)
+### Job details editing (Phase 6)
 
-- Loads all jobs from `users/{userId}/jobs` when you are signed in
-- Job cards show title, company, location, URL, date saved, and status
-- Change status in a dropdown (`Saved`, `Applied`, `Interview`, `Offer`, `Rejected`) — updates Firestore
-- Delete jobs from Firestore
-- Blocks duplicate saves when the same job URL already exists for your account
-- Empty state: **No saved jobs yet.**
-- Firestore access lives in `src/services/jobService.ts`
+- Edit saved jobs (title, company, location, salary, status, notes, follow-up date)
+- Changes saved to Firestore under your account
+- Follow-up badges for **today** (amber) and **overdue** (red)
+- **Back** returns to the job list
+
+
 
 ## Project structure
 
@@ -49,6 +58,7 @@ job-tracker-extension/
       firebase.ts
       fetchActiveTabJob.ts
       filterJobs.ts
+      followUpDate.ts
       userFacingErrors.ts
     services/
       jobService.ts
@@ -71,6 +81,8 @@ job-tracker-extension/
         JobList.tsx
         JobListControls.tsx
         JobCard.tsx
+        JobEditView.tsx
+        FollowUpBadge.tsx
 ```
 
 ## Setup
