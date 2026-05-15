@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { signOut } from "firebase/auth";
 import { getAuthInstance } from "../../lib/firebase";
+import { fetchExtractedJobFromActiveTab } from "../../lib/fetchActiveTabJob";
 import { formatAuthError, formatFirestoreError } from "../../lib/userFacingErrors";
 import {
   createJobForUser,
@@ -11,30 +12,34 @@ import {
   updateJobStatusForUser
 } from "../../services/jobService";
 import { DEFAULT_JOB_STATUS, JOB_STATUSES, type Job, type JobStatus } from "../../types/job";
+import type { ExtractedJobPage } from "../../types/extractedJobPage";
 import { JobList } from "./JobList";
-
-async function readActiveTab(): Promise<{ title: string; url: string } | null> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.url) {
-    return null;
-  }
-  const url = tab.url;
-  if (url.startsWith("chrome://") || url.startsWith("edge://") || url.startsWith("about:")) {
-    return null;
-  }
-  return { title: tab.title ?? "", url };
-}
 
 type JobPanelProps = {
   user: User;
 };
 
+function extractionHint(method: ExtractedJobPage["extractionMethod"]): string {
+  switch (method) {
+    case "linkedin":
+      return "Filled from LinkedIn page";
+    case "indeed":
+      return "Filled from Indeed page";
+    case "generic":
+      return "Filled from page content";
+    default:
+      return "Using tab title and URL";
+  }
+}
+
 export function JobPanel({ user }: JobPanelProps) {
+  const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<JobStatus>(DEFAULT_JOB_STATUS);
   const [tabHint, setTabHint] = useState<string | null>(null);
+  const [pageUrl, setPageUrl] = useState("");
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
@@ -42,6 +47,7 @@ export function JobPanel({ user }: JobPanelProps) {
 
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [extractLoading, setExtractLoading] = useState(false);
 
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
@@ -60,21 +66,34 @@ export function JobPanel({ user }: JobPanelProps) {
     }
   }, [user.uid]);
 
-  const refreshTabHint = useCallback(async () => {
-    const snap = await readActiveTab();
-    if (!snap) {
-      setTabHint("Open a normal web page tab to capture the job link automatically.");
+  const applyExtractedPage = useCallback((extracted: ExtractedJobPage | null) => {
+    if (!extracted) {
+      setTabHint("Open a normal web page tab to capture job details.");
+      setPageUrl("");
       return;
     }
-    setTabHint(
-      `From tab: ${snap.title ? snap.title.slice(0, 60) + (snap.title.length > 60 ? "…" : "") : snap.url}`
-    );
+
+    setJobTitle(extracted.jobTitle);
+    setCompany(extracted.company);
+    setLocation(extracted.location);
+    setPageUrl(extracted.url);
+    setTabHint(extractionHint(extracted.extractionMethod));
   }, []);
 
+  const refreshFromCurrentTab = useCallback(async () => {
+    setExtractLoading(true);
+    try {
+      const extracted = await fetchExtractedJobFromActiveTab();
+      applyExtractedPage(extracted);
+    } finally {
+      setExtractLoading(false);
+    }
+  }, [applyExtractedPage]);
+
   useEffect(() => {
-    void refreshTabHint();
     void loadJobs();
-  }, [refreshTabHint, loadJobs]);
+    void refreshFromCurrentTab();
+  }, [loadJobs, refreshFromCurrentTab]);
 
   async function handleLogout() {
     setLogoutError(null);
@@ -93,28 +112,43 @@ export function JobPanel({ user }: JobPanelProps) {
     setSuccessMessage(null);
     setSaveLoading(true);
     try {
-      const snap = await readActiveTab();
-      if (!snap) {
+      const extracted = await fetchExtractedJobFromActiveTab();
+      if (!extracted) {
         setSaveError("Switch to a job posting in a regular browser tab, then try again.");
         return;
       }
 
+      // Form values win when the user typed something; otherwise use scraped fields.
+      const finalTitle = jobTitle.trim() || extracted.jobTitle || "Untitled job";
+      const finalCompany = company.trim() || extracted.company;
+      const finalLocation = location.trim() || extracted.location;
+      const finalUrl = extracted.url || pageUrl;
+
+      if (!finalUrl) {
+        setSaveError("Could not read a URL from this tab.");
+        return;
+      }
+
       await createJobForUser(user.uid, {
-        jobTitle: snap.title.trim() || "Untitled job",
-        company: company.trim(),
-        location: location.trim(),
-        url: snap.url,
+        jobTitle: finalTitle,
+        company: finalCompany,
+        location: finalLocation,
+        url: finalUrl,
         status,
         notes: notes.trim(),
         dateSaved: new Date().toISOString()
       });
 
       setSuccessMessage("Job saved to your account.");
+      setJobTitle("");
       setCompany("");
       setLocation("");
       setNotes("");
       setStatus(DEFAULT_JOB_STATUS);
+      setPageUrl("");
+      setTabHint(null);
       await loadJobs();
+      await refreshFromCurrentTab();
     } catch (err) {
       if (err instanceof DuplicateJobUrlError) {
         setSaveError(err.message);
@@ -137,6 +171,8 @@ export function JobPanel({ user }: JobPanelProps) {
     await deleteJobForUser(user.uid, jobId);
     setJobs((current) => current.filter((job) => job.id !== jobId));
   }
+
+  const formDisabled = saveLoading || extractLoading;
 
   return (
     <div className="space-y-3">
@@ -162,9 +198,25 @@ export function JobPanel({ user }: JobPanelProps) {
       ) : null}
 
       {tabHint ? <p className="text-xs text-slate-500">{tabHint}</p> : null}
+      {pageUrl ? (
+        <p className="truncate text-[11px] text-slate-400" title={pageUrl}>
+          {pageUrl}
+        </p>
+      ) : null}
 
       <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2">
         <p className="text-xs font-semibold text-slate-600">Save a new job</p>
+        <label className="block text-xs font-medium text-slate-600">
+          Job title
+          <input
+            type="text"
+            value={jobTitle}
+            onChange={(e) => setJobTitle(e.target.value)}
+            placeholder="Software Engineer"
+            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            disabled={formDisabled}
+          />
+        </label>
         <label className="block text-xs font-medium text-slate-600">
           Company
           <input
@@ -173,7 +225,7 @@ export function JobPanel({ user }: JobPanelProps) {
             onChange={(e) => setCompany(e.target.value)}
             placeholder="Acme Inc."
             className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            disabled={saveLoading}
+            disabled={formDisabled}
           />
         </label>
         <label className="block text-xs font-medium text-slate-600">
@@ -184,7 +236,7 @@ export function JobPanel({ user }: JobPanelProps) {
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Remote · San Francisco"
             className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            disabled={saveLoading}
+            disabled={formDisabled}
           />
         </label>
         <label className="block text-xs font-medium text-slate-600">
@@ -193,7 +245,7 @@ export function JobPanel({ user }: JobPanelProps) {
             value={status}
             onChange={(e) => setStatus(e.target.value as JobStatus)}
             className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            disabled={saveLoading}
+            disabled={formDisabled}
           >
             {JOB_STATUSES.map((option) => (
               <option key={option} value={option}>
@@ -210,7 +262,7 @@ export function JobPanel({ user }: JobPanelProps) {
             placeholder="Recruiter, salary range, links…"
             rows={2}
             className="mt-1 w-full resize-none rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            disabled={saveLoading}
+            disabled={formDisabled}
           />
         </label>
       </div>
@@ -219,18 +271,18 @@ export function JobPanel({ user }: JobPanelProps) {
         <button
           type="button"
           onClick={() => void handleSaveJob()}
-          disabled={saveLoading}
+          disabled={formDisabled}
           className="w-full rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saveLoading ? "Saving job..." : "Save current job"}
         </button>
         <button
           type="button"
-          onClick={() => void refreshTabHint()}
-          className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-          disabled={saveLoading}
+          onClick={() => void refreshFromCurrentTab()}
+          className="w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+          disabled={formDisabled}
         >
-          Refresh from current tab
+          {extractLoading ? "Reading page..." : "Refresh from current tab"}
         </button>
       </div>
 
