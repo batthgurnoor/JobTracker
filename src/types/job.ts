@@ -10,8 +10,8 @@ export const JOB_STATUSES = [
 
 export type JobStatus = (typeof JOB_STATUSES)[number];
 
-/** Job as shown in the UI after reading from Firestore. */
-export type JobRecord = {
+/** Job document from Firestore: users/{userId}/jobs/{jobId} */
+export interface Job {
   id: string;
   jobTitle: string;
   company: string;
@@ -20,11 +20,11 @@ export type JobRecord = {
   status: JobStatus;
   notes: string;
   dateSaved: string;
-  updatedAtIso: string;
-};
+  updatedAt: string;
+}
 
-/** Fields written when the user saves a job (path: users/{userId}/jobs/{jobId}). */
-export type JobWritePayload = {
+/** Fields written when creating a new job. */
+export interface JobCreateInput {
   jobTitle: string;
   company: string;
   location: string;
@@ -32,4 +32,4 @@ export type JobWritePayload = {
   status: JobStatus;
   notes: string;
   dateSaved: string;
-};
+}
