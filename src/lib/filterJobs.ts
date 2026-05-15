@@ -11,7 +11,7 @@ function matchesSearch(job: Job, query: string): boolean {
   if (!q) {
     return true;
   }
-  const haystack = [job.jobTitle, job.company, job.location, job.notes]
+  const haystack = [job.jobTitle, job.company, job.location, job.salary, job.notes]
     .join(" ")
     .toLowerCase();
   return haystack.includes(q);
