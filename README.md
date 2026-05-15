@@ -59,7 +59,14 @@ Firebase keeps a tight list of origins that may use Authentication in the browse
 
 1. Build and load the extension once (**Load unpacked** → select the built `dist` folder).
 2. On `chrome://extensions`, enable **Developer mode** and copy the **Extension ID**.
-3. In Firebase: **Authentication → Settings → Authorized domains → Add domain** and paste that **extension ID** (Firebase documents this as registering your Chrome extension ID as an authorized domain).
+3. In Firebase: **Authentication → Settings → Authorized domains → Add domain** and enter the full URI (this is what Firebase validates as the “domain” for an extension):
+
+   `chrome-extension://YOUR_EXTENSION_ID`
+
+   Example if your ID is `abcdefghijklmnopqrstuvwxyz`:  
+   `chrome-extension://abcdefghijklmnopqrstuvwxyz`
+
+   Paste the **whole** string including `chrome-extension://`. Typing only the 32-character ID often shows “a valid domain name is required.”
 
 ### 3. Environment variables
 
