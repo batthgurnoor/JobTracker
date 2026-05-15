@@ -10,6 +10,13 @@ It lets people sign in with email/password and save job applications under their
 - Email/password sign-up, sign-in, and sign-out
 - Firebase config via Vite env vars (see `.env.example`)
 
+### Smart save from job pages (Phase 4)
+
+- Content script reads public DOM only (no APIs, no login bypass)
+- Extracts job title, company, and location using meta tags, headings, and common class names
+- Extra selectors for LinkedIn and Indeed; falls back to `document.title` + tab URL on any site
+- Popup **Refresh from current tab** pre-fills the save form; your edits are kept on save
+
 ### Job list & tracking (Phase 3)
 
 - Loads all jobs from `users/{userId}/jobs` when you are signed in
@@ -34,15 +41,18 @@ job-tracker-extension/
   src/
     lib/
       firebase.ts
+      fetchActiveTabJob.ts
       userFacingErrors.ts
     services/
       jobService.ts
     types/
       job.ts
+      extractedJobPage.ts
     background/
       index.ts
     content/
       index.ts
+      extractJobPage.ts
     popup/
       index.html
       main.tsx
