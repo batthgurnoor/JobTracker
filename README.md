@@ -3,15 +3,22 @@
 A Chrome Extension (Manifest V3) built with React, TypeScript, Vite, Tailwind CSS, Firebase Authentication, and Cloud Firestore.  
 It lets people sign in with email/password and save job applications under their own account.
 
-## Phase 2 features
+## Features
+
+### Authentication (Phase 2)
 
 - Email/password sign-up, sign-in, and sign-out
-- Jobs stored in Firestore under `users/{userId}/jobs/{jobId}`
-- Fields per job: `jobTitle`, `company`, `location`, `url`, `status` (defaults to `"Saved"`), `notes`, `dateSaved`, `updatedAt`
-- Loading and inline error messaging for auth and database actions
-- Firebase config supplied through Vite env vars (nothing secret hardcoded in components)
+- Firebase config via Vite env vars (see `.env.example`)
 
-Phase 1 local-only storage (`chrome.storage.local`) is no longer used for job history once Firebase is wired in; saves go to Firestore while you are signed in.
+### Job list & tracking (Phase 3)
+
+- Loads all jobs from `users/{userId}/jobs` when you are signed in
+- Job cards show title, company, location, URL, date saved, and status
+- Change status in a dropdown (`Saved`, `Applied`, `Interview`, `Offer`, `Rejected`) — updates Firestore
+- Delete jobs from Firestore
+- Blocks duplicate saves when the same job URL already exists for your account
+- Empty state: **No saved jobs yet.**
+- Firestore access lives in `src/services/jobService.ts`
 
 ## Project structure
 
@@ -27,8 +34,9 @@ job-tracker-extension/
   src/
     lib/
       firebase.ts
-      jobsFirestore.ts
       userFacingErrors.ts
+    services/
+      jobService.ts
     types/
       job.ts
     background/
@@ -43,6 +51,8 @@ job-tracker-extension/
       components/
         AuthPanel.tsx
         JobPanel.tsx
+        JobList.tsx
+        JobCard.tsx
 ```
 
 ## Setup
