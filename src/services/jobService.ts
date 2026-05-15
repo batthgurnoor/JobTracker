@@ -17,8 +17,10 @@ import {
   JOB_STATUSES,
   type Job,
   type JobCreateInput,
-  type JobStatus
+  type JobStatus,
+  type JobUpdateInput
 } from "../types/job";
+import { toDateInputValue } from "../lib/followUpDate";
 
 /** Thrown when the user already saved this job URL. */
 export class DuplicateJobUrlError extends Error {
@@ -72,8 +74,10 @@ function documentToJob(docId: string, data: DocumentData): Job {
     company: String(data.company ?? ""),
     location: String(data.location ?? ""),
     url: String(data.url ?? ""),
+    salary: String(data.salary ?? ""),
     status: normalizeStatus(data.status),
     notes: String(data.notes ?? ""),
+    followUpDate: toDateInputValue(String(data.followUpDate ?? "")),
     dateSaved: String(data.dateSaved ?? ""),
     updatedAt: timestampToIso(data.updatedAt)
   };
@@ -114,6 +118,29 @@ export async function createJobForUser(userId: string, input: JobCreateInput): P
   await addDoc(jobsRef, {
     ...input,
     url,
+    salary: input.salary?.trim() ?? "",
+    followUpDate: toDateInputValue(input.followUpDate ?? ""),
+    updatedAt: serverTimestamp()
+  });
+}
+
+/**
+ * Updates editable job fields from the detail / edit screen.
+ */
+export async function updateJobForUser(
+  userId: string,
+  jobId: string,
+  input: JobUpdateInput
+): Promise<void> {
+  const jobRef = doc(getFirestoreInstance(), "users", userId, "jobs", jobId);
+  await updateDoc(jobRef, {
+    jobTitle: input.jobTitle.trim(),
+    company: input.company.trim(),
+    location: input.location.trim(),
+    salary: input.salary.trim(),
+    status: input.status,
+    notes: input.notes.trim(),
+    followUpDate: toDateInputValue(input.followUpDate),
     updatedAt: serverTimestamp()
   });
 }
