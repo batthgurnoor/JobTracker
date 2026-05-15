@@ -12,11 +12,12 @@ type JobListProps = {
   jobs: Job[];
   loading: boolean;
   error: string | null;
+  onEdit: (job: Job) => void;
   onStatusChange: (jobId: string, status: JobStatus) => Promise<void>;
   onDelete: (jobId: string) => Promise<void>;
 };
 
-export function JobList({ jobs, loading, error, onStatusChange, onDelete }: JobListProps) {
+export function JobList({ jobs, loading, error, onEdit, onStatusChange, onDelete }: JobListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<JobStatusFilter>("all");
   const [sortOption, setSortOption] = useState<JobSortOption>("newest");
@@ -62,6 +63,7 @@ export function JobList({ jobs, loading, error, onStatusChange, onDelete }: JobL
                 <JobCard
                   key={job.id}
                   job={job}
+                  onEdit={onEdit}
                   onStatusChange={onStatusChange}
                   onDelete={onDelete}
                 />
