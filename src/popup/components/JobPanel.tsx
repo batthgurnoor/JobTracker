@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "firebase/auth";
 import { signOut } from "firebase/auth";
 import { getAuthInstance } from "../../lib/firebase";
@@ -13,6 +13,8 @@ import {
 } from "../../services/jobService";
 import { DEFAULT_JOB_STATUS, JOB_STATUSES, type Job, type JobStatus } from "../../types/job";
 import type { ExtractedJobPage } from "../../types/extractedJobPage";
+import { computeDashboardStats } from "../../lib/dashboardStats";
+import { DashboardSummary } from "./dashboard/DashboardSummary";
 import { JobEditView } from "./JobEditView";
 import { JobList } from "./JobList";
 
@@ -187,6 +189,8 @@ export function JobPanel({ user }: JobPanelProps) {
 
   const formDisabled = saveLoading || extractLoading || editingJob !== null;
 
+  const dashboardStats = useMemo(() => computeDashboardStats(jobs), [jobs]);
+
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-2 border-b border-slate-200 pb-3">
@@ -208,6 +212,10 @@ export function JobPanel({ user }: JobPanelProps) {
         <p className="rounded-md bg-red-50 px-2 py-1.5 text-sm text-red-700" role="alert">
           {logoutError}
         </p>
+      ) : null}
+
+      {!editingJob ? (
+        <DashboardSummary stats={dashboardStats} loading={jobsLoading} />
       ) : null}
 
       {tabHint && !editingJob ? <p className="text-xs text-slate-500">{tabHint}</p> : null}
