@@ -13,6 +13,7 @@ import {
 } from "../../services/jobService";
 import { DEFAULT_JOB_STATUS, JOB_STATUSES, type Job, type JobStatus } from "../../types/job";
 import type { ExtractedJobPage } from "../../types/extractedJobPage";
+import { JobEditView } from "./JobEditView";
 import { JobList } from "./JobList";
 
 type JobPanelProps = {
@@ -36,8 +37,10 @@ export function JobPanel({ user }: JobPanelProps) {
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
   const [location, setLocation] = useState("");
+  const [salary, setSalary] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<JobStatus>(DEFAULT_JOB_STATUS);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [tabHint, setTabHint] = useState<string | null>(null);
   const [pageUrl, setPageUrl] = useState("");
 
@@ -134,6 +137,7 @@ export function JobPanel({ user }: JobPanelProps) {
         company: finalCompany,
         location: finalLocation,
         url: finalUrl,
+        salary: salary.trim(),
         status,
         notes: notes.trim(),
         dateSaved: new Date().toISOString()
@@ -143,6 +147,7 @@ export function JobPanel({ user }: JobPanelProps) {
       setJobTitle("");
       setCompany("");
       setLocation("");
+      setSalary("");
       setNotes("");
       setStatus(DEFAULT_JOB_STATUS);
       setPageUrl("");
@@ -170,9 +175,17 @@ export function JobPanel({ user }: JobPanelProps) {
   async function handleDelete(jobId: string) {
     await deleteJobForUser(user.uid, jobId);
     setJobs((current) => current.filter((job) => job.id !== jobId));
+    if (editingJob?.id === jobId) {
+      setEditingJob(null);
+    }
   }
 
-  const formDisabled = saveLoading || extractLoading;
+  function handleJobSaved(updated: Job) {
+    setJobs((current) => current.map((job) => (job.id === updated.id ? updated : job)));
+    setEditingJob(null);
+  }
+
+  const formDisabled = saveLoading || extractLoading || editingJob !== null;
 
   return (
     <div className="space-y-3">
@@ -197,13 +210,24 @@ export function JobPanel({ user }: JobPanelProps) {
         </p>
       ) : null}
 
-      {tabHint ? <p className="text-xs text-slate-500">{tabHint}</p> : null}
-      {pageUrl ? (
+      {tabHint && !editingJob ? <p className="text-xs text-slate-500">{tabHint}</p> : null}
+      {pageUrl && !editingJob ? (
         <p className="truncate text-[11px] text-slate-400" title={pageUrl}>
           {pageUrl}
         </p>
       ) : null}
 
+      {editingJob ? (
+        <JobEditView
+          job={editingJob}
+          userId={user.uid}
+          onBack={() => setEditingJob(null)}
+          onSaved={handleJobSaved}
+        />
+      ) : null}
+
+      {!editingJob ? (
+      <>
       <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-2">
         <p className="text-xs font-semibold text-slate-600">Save a new job</p>
         <label className="block text-xs font-medium text-slate-600">
@@ -235,6 +259,17 @@ export function JobPanel({ user }: JobPanelProps) {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Remote · San Francisco"
+            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            disabled={formDisabled}
+          />
+        </label>
+        <label className="block text-xs font-medium text-slate-600">
+          Salary
+          <input
+            type="text"
+            value={salary}
+            onChange={(e) => setSalary(e.target.value)}
+            placeholder="$120k – $150k"
             className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             disabled={formDisabled}
           />
@@ -300,9 +335,12 @@ export function JobPanel({ user }: JobPanelProps) {
         jobs={jobs}
         loading={jobsLoading}
         error={jobsError}
+        onEdit={setEditingJob}
         onStatusChange={handleStatusChange}
         onDelete={handleDelete}
       />
+      </>
+      ) : null}
     </div>
   );
 }
